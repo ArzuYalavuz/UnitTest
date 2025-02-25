@@ -7,12 +7,26 @@
     "test": "jest --forceExit"
   },
   "dependencies": {
-    "puppeteer": "^21.10.0",
     "jest": "^29.7.0",
-    "jest-puppeteer": "^9.0.2"
+    "jest-puppeteer": "^9.0.2",
+    "puppeteer": "^21.11.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/puppeteer": "^7.0.4"
-  }
-} 
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArzuYalavuz/UnitTest.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ArzuYalavuz/UnitTest/issues"
+  },
+  "homepage": "https://github.com/ArzuYalavuz/UnitTest#readme"
+}
