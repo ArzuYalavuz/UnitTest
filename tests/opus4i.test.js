@@ -361,6 +361,69 @@ async function runTests() {
       testsFailed++;
     }
 
+    // Test for expired course registration
+    console.log('\nTest 10b: Testing expired course registration...');
+    try {
+      // Navigate to the courses page
+      await page.goto(config.baseUrl + '/courses', config.navigationOptions);
+      console.log('✅ Courses page loaded');
+
+      // Find courses with dates
+      const expiredCourse = await page.evaluate(() => {
+        const courseElements = document.querySelectorAll('.course-card, [data-testid="course-item"]');
+        for (const course of courseElements) {
+          const dateText = course.querySelector('[data-testid="course-date"], .course-date')?.textContent;
+          if (dateText) {
+            const courseDate = new Date(dateText);
+            if (courseDate < new Date()) {
+              return {
+                title: course.querySelector('h3, .course-title')?.textContent,
+                date: dateText
+              };
+            }
+          }
+        }
+        return null;
+      });
+
+      if (!expiredCourse) {
+        console.log('ℹ️ No expired courses found to test');
+        return;
+      }
+
+      console.log(`Found expired course: ${expiredCourse.title} (${expiredCourse.date})`);
+
+      // Try to enroll in the expired course
+      const enrollButton = await page.waitForSelector('button:has-text("Enroll"), .enroll-button', { timeout: 5000 });
+      
+      // Check if the enroll button is disabled
+      const isDisabled = await page.evaluate(button => {
+        return button.disabled || 
+               button.classList.contains('disabled') || 
+               button.getAttribute('aria-disabled') === 'true';
+      }, enrollButton);
+
+      if (!isDisabled) {
+        // If button is not disabled, try clicking it to verify error message
+        await enrollButton.click();
+        
+        // Check for expired course error message
+        const errorMessage = await page.waitForSelector('.error-message, .alert-error, [role="alert"]', { timeout: 5000 })
+          .then(el => el.evaluate(node => node.textContent))
+          .catch(() => null);
+
+        if (!errorMessage || !errorMessage.toLowerCase().includes('expired') && !errorMessage.toLowerCase().includes('ended')) {
+          throw new Error('Course expiration message not found after enrollment attempt');
+        }
+      }
+
+      console.log('✅ Expired course enrollment properly restricted');
+
+    } catch (error) {
+      handleError(error, 'Expired course registration test');
+      testsFailed++;
+    }
+
     // Test 11: Private Section Access Verification
     console.log('\nTest 11: Testing private section access control...');
     try {
