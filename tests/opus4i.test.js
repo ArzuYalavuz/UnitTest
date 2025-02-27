@@ -25,7 +25,7 @@ const handleError = (error, testName) => {
 async function runTests() {
   let browser;
   let testsFailed = 0;
-  const testsTotal = 10;
+  const testsTotal = 11;
 
   try {
     console.log('🚀 Starting test suite for opus4i.com...\n');
@@ -358,6 +358,52 @@ async function runTests() {
 
     } catch (error) {
       handleError(error, 'Course enrollment verification test');
+      testsFailed++;
+    }
+
+    // Test 11: Private Section Access Verification
+    console.log('\nTest 11: Testing private section access control...');
+    try {
+      // Try accessing a private page without login
+      await page.goto(config.baseUrl + '/posts/markdown-test-page', config.navigationOptions);
+      
+      // Check if redirected to login or access denied
+      const currentUrl = page.url();
+      const pageContent = await page.content();
+      const isRedirectedToLogin = currentUrl.includes('login') || 
+                                pageContent.toLowerCase().includes('login required') ||
+                                pageContent.toLowerCase().includes('access denied');
+      
+      if (!isRedirectedToLogin) {
+        throw new Error('Private page accessible without login');
+      }
+      console.log('✅ Private page properly restricted before login');
+
+      // Perform login
+      await page.goto(config.baseUrl + '/login', config.navigationOptions);
+      
+      // Wait for login options
+      const googleLoginBtn = await page.waitForSelector('[data-testid="google-login"], .google-login, button:has-text("Login with Google")', 
+        { timeout: 5000 });
+      const githubLoginBtn = await page.waitForSelector('[data-testid="github-login"], .github-login, button:has-text("Login with GitHub")', 
+        { timeout: 5000 });
+      
+      console.log('✅ Login page loaded with authentication options');
+
+      // Note: We can't actually perform the login in automated tests
+      // as it requires real OAuth flow. In a real test environment,
+      // you would use mock authentication or test credentials.
+      console.log('ℹ️ Login simulation skipped - requires real OAuth flow');
+      
+      // For demonstration, we'll verify login elements exist
+      if (!googleLoginBtn || !githubLoginBtn) {
+        throw new Error('Login options not found');
+      }
+      
+      console.log('✅ Login functionality verification complete');
+
+    } catch (error) {
+      handleError(error, 'Private section access test');
       testsFailed++;
     }
 
