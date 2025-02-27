@@ -25,7 +25,7 @@ const handleError = (error, testName) => {
 async function runTests() {
   let browser;
   let testsFailed = 0;
-  const testsTotal = 9;
+  const testsTotal = 10;
 
   try {
     console.log('🚀 Starting test suite for opus4i.com...\n');
@@ -309,6 +309,55 @@ async function runTests() {
       console.log('Menu visibility state:', menuVisibility);
     } catch (error) {
       handleError(error, 'Mobile menu test');
+      testsFailed++;
+    }
+
+    // Test 10: Course Enrollment Verification
+    console.log('\nTest 10: Testing course enrollment verification...');
+    try {
+      // Navigate to the courses page
+      await page.goto(config.baseUrl + '/courses', config.navigationOptions);
+      console.log('✅ Courses page loaded');
+
+      // Find and click the first available course
+      const firstCourse = await page.waitForSelector('.course-card, [data-testid="course-item"]', { timeout: 5000 });
+      if (!firstCourse) {
+        throw new Error('No courses found on the page');
+      }
+
+      await firstCourse.click();
+      console.log('✅ Selected first available course');
+
+      // Wait for enrollment button and click it
+      const enrollButton = await page.waitForSelector('button[contains(text(), "Enroll")] , .enroll-button', { timeout: 5000 });
+      await enrollButton.click();
+      console.log('✅ Clicked enroll button');
+
+      // Check for successful enrollment message
+      const enrollmentSuccess = await page.waitForSelector('.success-message, .alert-success', { timeout: 5000 })
+        .then(el => el.evaluate(node => node.textContent))
+        .catch(() => null);
+
+      if (!enrollmentSuccess) {
+        throw new Error('Enrollment success message not found');
+      }
+      console.log('✅ First enrollment successful');
+
+      // Try to enroll in the same course again
+      await enrollButton.click();
+      
+      // Check for duplicate enrollment error message
+      const duplicateError = await page.waitForSelector('.error-message, .alert-error, [role="alert"]', { timeout: 5000 })
+        .then(el => el.evaluate(node => node.textContent))
+        .catch(() => null);
+
+      if (!duplicateError || !duplicateError.toLowerCase().includes('already enrolled')) {
+        throw new Error('Duplicate enrollment was not prevented');
+      }
+      console.log('✅ Duplicate enrollment prevented successfully');
+
+    } catch (error) {
+      handleError(error, 'Course enrollment verification test');
       testsFailed++;
     }
 
